@@ -38,9 +38,11 @@ fun Greeting(
     modifier: Modifier = Modifier
 ) {
     Text(
-        text = "\n\n\nHello $name!\nNPM: $npm" +
+        text = "\n \n \t \tHello $name!\n \t \tNPM: $npm" +
                 "\n\n" +
-                "SIAP BELAJAR COMPOSE",
+                "\t \tSIAP BELAJAR COMPOSE" +
+                "\n\n \t \tGerak Alam \n \n" +
+                "GerakAlam merupakan aplikasi yang membantu masyarakat menemukan berbagai kegiatan sosial seperti volunteer, kegiatan komunitas, aksi lingkungan, serta informasi pendakian dan gunung. Aplikasi ini bertujuan memudahkan pengguna untuk berpartisipasi dalam kegiatan sosial sekaligus meningkatkan kepedulian terhadap alam dan lingkungan.",
         modifier = modifier
     )
 }
