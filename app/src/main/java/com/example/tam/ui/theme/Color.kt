@@ -2,14 +2,14 @@ package com.example.tam.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-val LightBluePrimary = Color(0xFF81D4FA)
-val LightBlueSecondary = Color(0xFFB3E5FC)
-val WarmAccent = Color(0xFFFFCC80)
+// Nuansa Alam (Hijau, Coklat, Natural)
+val ForestGreen = Color(0xFF2D5A27)
+val LeafGreen = Color(0xFF4CAF50)
+val EarthBrown = Color(0xFF795548)
+val SandBeige = Color(0xFFF5F5DC)
+val NaturalWhite = Color(0xFFFAFAFA)
+val DarkGrey = Color(0xFF333333)
 
-val DarkBluePrimary = Color(0xFF0277BD)
-val WarmBackground = Color(0xFFFFF8E1)
-
-// Default colors
 val Purple80 = Color(0xFFD0BCFF)
 val PurpleGrey80 = Color(0xFFCCC2DC)
 val Pink80 = Color(0xFFEFB8C8)
