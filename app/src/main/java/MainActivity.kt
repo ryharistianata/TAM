@@ -49,13 +49,13 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun MainScreen() {
-    // 1. State Management: Menggunakan remember dan mutableStateListOf agar state tetap terjaga
+
     val eventList = remember { mutableStateListOf(*VolunteerSource.dummyEvent.toTypedArray()) }
 
 
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
-    
+
 
     var loadingEventId by remember { mutableStateOf<Int?>(null) }
 
@@ -86,20 +86,19 @@ fun MainScreen() {
                     if (event != null && !event.isJoined) {
                         // Set state loading
                         loadingEventId = id
-                        
-                        // Simulasi proses asynchronous dengan delay
+
                         delay(2000)
-                        
-                        // Update data setelah proses selesai
+
+
                         val index = eventList.indexOfFirst { it.id == id }
                         if (index != -1) {
                             eventList[index] = eventList[index].copy(isJoined = true)
                         }
-                        
-                        // Matikan loading
+
+
                         loadingEventId = null
-                        
-                        // MODUL 9: Menampilkan Feedback melalui Snackbar
+
+
                         snackbarHostState.showSnackbar(
                             message = "Berhasil bergabung dalam kegiatan: ${event.namaKegiatan}"
                         )
