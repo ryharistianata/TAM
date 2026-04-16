@@ -32,6 +32,8 @@ import androidx.compose.ui.unit.sp
 import com.example.tam.model.VolunteerEvent
 import com.example.tam.model.VolunteerSource
 import com.example.tam.ui.theme.TAMTheme
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -50,15 +52,27 @@ fun MainScreen() {
     // 1. State Management: Menggunakan remember dan mutableStateListOf agar state tetap terjaga
     val eventList = remember { mutableStateListOf(*VolunteerSource.dummyEvent.toTypedArray()) }
 
+
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+    
+
+    var loadingEventId by remember { mutableStateOf<Int?>(null) }
+
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         topBar = {
             HeaderSection()
         },
+
+        snackbarHost = {
+            SnackbarHost(hostState = snackbarHostState)
+        },
         containerColor = MaterialTheme.colorScheme.background
     ) { innerPadding ->
         HomeScreen(
             events = eventList,
+            loadingEventId = loadingEventId,
             onToggleFavorite = { id ->
                 val index = eventList.indexOfFirst { it.id == id }
                 if (index != -1) {
@@ -66,9 +80,30 @@ fun MainScreen() {
                 }
             },
             onJoinEvent = { id ->
-                val index = eventList.indexOfFirst { it.id == id }
-                if (index != -1) {
-                    eventList[index] = eventList[index].copy(isJoined = !eventList[index].isJoined)
+
+                scope.launch {
+                    val event = eventList.find { it.id == id }
+                    if (event != null && !event.isJoined) {
+                        // Set state loading
+                        loadingEventId = id
+                        
+                        // Simulasi proses asynchronous dengan delay
+                        delay(2000)
+                        
+                        // Update data setelah proses selesai
+                        val index = eventList.indexOfFirst { it.id == id }
+                        if (index != -1) {
+                            eventList[index] = eventList[index].copy(isJoined = true)
+                        }
+                        
+                        // Matikan loading
+                        loadingEventId = null
+                        
+                        // MODUL 9: Menampilkan Feedback melalui Snackbar
+                        snackbarHostState.showSnackbar(
+                            message = "Berhasil bergabung dalam kegiatan: ${event.namaKegiatan}"
+                        )
+                    }
                 }
             },
             modifier = Modifier.padding(innerPadding)
@@ -96,6 +131,7 @@ fun HeaderSection() {
 @Composable
 fun HomeScreen(
     events: List<VolunteerEvent>,
+    loadingEventId: Int?,
     onToggleFavorite: (Int) -> Unit,
     onJoinEvent: (Int) -> Unit,
     modifier: Modifier = Modifier
@@ -135,6 +171,7 @@ fun HomeScreen(
         items(events) { event ->
             EventCard(
                 event = event,
+                isLoading = loadingEventId == event.id,
                 onToggleFavorite = { onToggleFavorite(event.id) },
                 onJoin = { onJoinEvent(event.id) },
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
@@ -184,6 +221,7 @@ fun EventRowItem(
 @Composable
 fun EventCard(
     event: VolunteerEvent,
+    isLoading: Boolean,
     onToggleFavorite: () -> Unit,
     onJoin: () -> Unit,
     modifier: Modifier = Modifier
@@ -227,18 +265,33 @@ fun EventCard(
                     overflow = TextOverflow.Ellipsis
                 )
                 Spacer(modifier = Modifier.height(16.dp))
+                
+
                 Button(
                     onClick = onJoin,
                     modifier = Modifier.fillMaxWidth(),
+
+                    enabled = !isLoading && !event.isJoined,
                     colors = ButtonDefaults.buttonColors(
                         containerColor = if (event.isJoined) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.primary
                     ),
                     shape = RoundedCornerShape(8.dp)
                 ) {
-                    Text(
-                        text = if (event.isJoined) "Joined" else "Join",
-                        fontWeight = FontWeight.Bold
-                    )
+                    if (isLoading) {
+
+                        CircularProgressIndicator(
+                            color = Color.White,
+                            modifier = Modifier.size(20.dp),
+                            strokeWidth = 2.dp
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(text = "Sedang memproses...")
+                    } else {
+                        Text(
+                            text = if (event.isJoined) "Joined" else "Join",
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
                 }
             }
         }
