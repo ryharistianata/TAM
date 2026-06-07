@@ -4,6 +4,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.viewModels
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -25,56 +26,36 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.example.tam.api.RetrofitInstance
 import com.example.tam.model.VolunteerEvent
+import com.example.tam.repository.VolunteerRepository
+import com.example.tam.ui.VolunteerUiState
+import com.example.tam.ui.VolunteerViewModel
 import com.example.tam.ui.theme.TAMTheme
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
+    private val viewModel: VolunteerViewModel by viewModels {
+        VolunteerViewModel.Factory(VolunteerRepository(RetrofitInstance.api))
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
             TAMTheme {
-                MainScreen()
+                MainScreen(viewModel)
             }
         }
     }
 }
 
 @Composable
-fun MainScreen() {
-    val scope = rememberCoroutineScope()
+fun MainScreen(viewModel: VolunteerViewModel) {
     val snackbarHostState = remember { SnackbarHostState() }
-    
-    var eventList by remember { mutableStateOf<List<VolunteerEvent>>(emptyList()) }
-    var isLoading by remember { mutableStateOf(true) }
-    var isError by remember { mutableStateOf(false) }
-    
-    var loadingJoinId by remember { mutableStateOf<Int?>(null) }
-
-    fun loadData() {
-        scope.launch {
-            try {
-                isLoading = true
-                isError = false
-                val result = RetrofitInstance.api.getEvents()
-                eventList = result
-                isLoading = false
-            } catch (e: Exception) {
-                isLoading = false
-                isError = true
-            }
-        }
-    }
-
-    LaunchedEffect(Unit) {
-        loadData()
-    }
+    val uiState = viewModel.uiState
+    val scope = rememberCoroutineScope()
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
@@ -83,8 +64,8 @@ fun MainScreen() {
         containerColor = Color(0xFFF9F9F9)
     ) { innerPadding ->
         Box(modifier = Modifier.padding(innerPadding).fillMaxSize()) {
-            when {
-                isLoading -> {
+            when (uiState) {
+                is VolunteerUiState.Loading -> {
                     Column(
                         modifier = Modifier.align(Alignment.Center),
                         horizontalAlignment = Alignment.CenterHorizontally
@@ -94,7 +75,7 @@ fun MainScreen() {
                         Text("Menghubungkan ke server Gerak Alam...", color = Color.Gray)
                     }
                 }
-                isError -> {
+                is VolunteerUiState.Error -> {
                     Column(
                         modifier = Modifier.align(Alignment.Center),
                         horizontalAlignment = Alignment.CenterHorizontally
@@ -105,34 +86,25 @@ fun MainScreen() {
                             color = Color.Red,
                             fontWeight = FontWeight.Bold
                         )
-                        Spacer(modifier = Modifier.height(12.dp))
-                        Button(onClick = { loadData() }) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text("Periksa koneksi internet Anda", color = Color.Gray)
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Button(onClick = { viewModel.getEvents() }) {
                             Icon(Icons.Default.Refresh, contentDescription = null)
                             Spacer(modifier = Modifier.width(8.dp))
                             Text("Coba Lagi")
                         }
                     }
                 }
-                else -> {
+                is VolunteerUiState.Success -> {
                     HomeScreen(
-                        events = eventList,
-                        loadingId = loadingJoinId,
-                        onToggleFavorite = { id ->
-                            eventList = eventList.map {
-                                if (it.id == id) it.copy(isFavorite = !it.isFavorite) else it
-                            }
-                        },
+                        events = uiState.events,
+                        loadingJoinId = viewModel.loadingJoinId,
+                        onToggleFavorite = { viewModel.toggleFavorite(it) },
                         onJoin = { id ->
-                            scope.launch {
-                                val event = eventList.find { it.id == id }
-                                if (event != null && !event.isJoined) {
-                                    loadingJoinId = id
-                                    delay(2000)
-                                    eventList = eventList.map {
-                                        if (it.id == id) it.copy(isJoined = true) else it
-                                    }
-                                    loadingJoinId = null
-                                    snackbarHostState.showSnackbar("Berhasil bergabung di aksi: ${event.nama ?: ""}")
+                            viewModel.joinEvent(id) { message ->
+                                scope.launch {
+                                    snackbarHostState.showSnackbar(message)
                                 }
                             }
                         }
@@ -163,7 +135,7 @@ fun HeaderSection() {
 @Composable
 fun HomeScreen(
     events: List<VolunteerEvent>,
-    loadingId: Int?,
+    loadingJoinId: Int?,
     onToggleFavorite: (Int) -> Unit,
     onJoin: (Int) -> Unit
 ) {
@@ -190,7 +162,7 @@ fun HomeScreen(
 
         item {
             Text(
-                "Daftar Kegiatan Utama",
+                "Daftar Menu Lengkap",
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.padding(start = 16.dp, top = 24.dp, end = 16.dp, bottom = 8.dp)
@@ -200,7 +172,7 @@ fun HomeScreen(
         items(events) { event ->
             MainEventCard(
                 event = event,
-                isLoading = loadingId == event.id,
+                isLoading = loadingJoinId == event.id,
                 onToggleFavorite = { onToggleFavorite(event.id) },
                 onJoin = { onJoin(event.id) }
             )
@@ -301,7 +273,7 @@ fun MainEventCard(
                 }
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(event.deskripsi ?: "", style = MaterialTheme.typography.bodyMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
-                Text(text = "Biaya: ${event.harga ?: ""}", color = Color(0xFFE65100), fontWeight = FontWeight.ExtraBold, modifier = Modifier.padding(vertical = 4.dp))
+                Text(text = "Harga: ${event.harga ?: ""}", color = Color(0xFFE65100), fontWeight = FontWeight.ExtraBold, modifier = Modifier.padding(vertical = 4.dp))
                 
                 Spacer(modifier = Modifier.height(12.dp))
 
@@ -319,7 +291,7 @@ fun MainEventCard(
                         Spacer(modifier = Modifier.width(8.dp))
                         Text("Memproses...")
                     } else {
-                        Text(text = if (event.isJoined) "Terdaftar" else "Daftar Sekarang", fontWeight = FontWeight.Bold)
+                        Text(text = if (event.isJoined) "Pesan" else "Pesan", fontWeight = FontWeight.Bold)
                     }
                 }
             }
