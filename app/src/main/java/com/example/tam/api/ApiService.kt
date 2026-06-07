@@ -9,18 +9,4 @@ interface ApiService {
     @GET("events")
     suspend fun getEvents(): List<VolunteerEvent>
 
-    companion object {
-        private var apiService: ApiService? = null
-
-        fun getInstance(): ApiService {
-            if (apiService == null) {
-                apiService = Retrofit.Builder()
-                    .baseUrl("https://api.gerakalam.com/") // Replace with your base URL
-                    .addConverterFactory(GsonConverterFactory.create())
-                    .build()
-                    .create(ApiService::class.java)
-            }
-            return apiService!!
-        }
-    }
 }

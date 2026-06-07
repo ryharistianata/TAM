@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.kotlin.android)
 }
 
 android {
@@ -33,6 +34,9 @@ android {
     buildFeatures {
         compose = true
     }
+    kotlinOptions {
+        jvmTarget = "11"
+    }
 }
 
 dependencies {
@@ -44,12 +48,11 @@ dependencies {
     implementation(libs.androidx.compose.ui.graphics)
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.compose.material3)
-    
-    // Ikon Extended
+
     implementation(libs.androidx.compose.material.icons.extended)
-    
-    // Retrofit & Coil (Pastikan nama ini sesuai dengan libs.versions.toml)
-    implementation(libs.retrofit.core)
+
+    // Retrofit & Coil
+    implementation(libs.retrofit)
     implementation(libs.retrofit.gson)
     implementation(libs.coil.compose)
 
