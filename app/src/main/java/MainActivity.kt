@@ -4,7 +4,6 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -13,22 +12,20 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.FavoriteBorder
-import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
 import com.example.tam.model.VolunteerEvent
 import com.example.tam.model.VolunteerSource
 import com.example.tam.ui.theme.TAMTheme
@@ -49,64 +46,84 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun MainScreen() {
-
-    val eventList = remember { mutableStateListOf(*VolunteerSource.dummyEvent.toTypedArray()) }
-
-
-    val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+    val snackbarHostState = remember { SnackbarHostState() }
+    
+    // State Management sesuai Modul 10
+    var eventList by remember { mutableStateOf<List<VolunteerEvent>>(emptyList()) }
+    var isInitialLoading by remember { mutableStateOf(true) }
+    var isError by remember { mutableStateOf(false) }
+    var loadingJoinId by remember { mutableStateOf<Int?>(null) }
 
-
-    var loadingEventId by remember { mutableStateOf<Int?>(null) }
+    // Memuat data secara Asynchronous
+    LaunchedEffect(Unit) {
+        try {
+            isInitialLoading = true
+            delay(2000) // Simulasi loading network
+            eventList = VolunteerSource.dummyEvent
+            isInitialLoading = false
+        } catch (e: Exception) {
+            isInitialLoading = false
+            isError = true
+        }
+    }
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
-        topBar = {
-            HeaderSection()
-        },
-
-        snackbarHost = {
-            SnackbarHost(hostState = snackbarHostState)
-        },
-        containerColor = MaterialTheme.colorScheme.background
+        snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
+        topBar = { HeaderSection() },
+        containerColor = Color(0xFFF9F9F9)
     ) { innerPadding ->
-        HomeScreen(
-            events = eventList,
-            loadingEventId = loadingEventId,
-            onToggleFavorite = { id ->
-                val index = eventList.indexOfFirst { it.id == id }
-                if (index != -1) {
-                    eventList[index] = eventList[index].copy(isFavorite = !eventList[index].isFavorite)
-                }
-            },
-            onJoinEvent = { id ->
-
-                scope.launch {
-                    val event = eventList.find { it.id == id }
-                    if (event != null && !event.isJoined) {
-                        // Set state loading
-                        loadingEventId = id
-
-                        delay(2000)
-
-
-                        val index = eventList.indexOfFirst { it.id == id }
-                        if (index != -1) {
-                            eventList[index] = eventList[index].copy(isJoined = true)
-                        }
-
-
-                        loadingEventId = null
-
-
-                        snackbarHostState.showSnackbar(
-                            message = "Berhasil bergabung dalam kegiatan: ${event.namaKegiatan}"
-                        )
+        Box(modifier = Modifier.padding(innerPadding).fillMaxSize()) {
+            when {
+                isInitialLoading -> {
+                    Column(
+                        modifier = Modifier.align(Alignment.Center),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text("Memuat data Gerak Alam...", color = Color.Gray)
                     }
                 }
-            },
-            modifier = Modifier.padding(innerPadding)
-        )
+                isError -> {
+                    ErrorLayout(onRetry = {
+                        scope.launch {
+                            isInitialLoading = true
+                            isError = false
+                            delay(1000)
+                            eventList = VolunteerSource.dummyEvent
+                            isInitialLoading = false
+                        }
+                    })
+                }
+                else -> {
+                    HomeScreen(
+                        events = eventList,
+                        loadingId = loadingJoinId,
+                        onToggleFavorite = { id ->
+                            eventList = eventList.map {
+                                if (it.id == id) it.copy(isFavorite = !it.isFavorite) else it
+                            }
+                        },
+                        onJoin = { id ->
+                            scope.launch {
+                                val event = eventList.find { it.id == id }
+                                if (event != null && !event.isJoined) {
+                                    loadingJoinId = id
+                                    delay(2000) // Simulasi proses (Modul 9)
+                                    eventList = eventList.map {
+                                        if (it.id == id) it.copy(isJoined = true) else it
+                                    }
+                                    loadingJoinId = null
+                                    snackbarHostState.showSnackbar("Pendaftaran ${event.namaKegiatan} berhasil!")
+                                }
+                            }
+                        }
+                    )
+                }
+            }
+        }
     }
 }
 
@@ -116,7 +133,8 @@ fun HeaderSection() {
         modifier = Modifier
             .fillMaxWidth()
             .background(MaterialTheme.colorScheme.primary)
-            .padding(top = 48.dp, bottom = 16.dp, start = 16.dp, end = 16.dp)
+            // FIXED: Menggunakan start, top, end, bottom untuk menghindari error padding
+            .padding(start = 16.dp, top = 48.dp, end = 16.dp, bottom = 16.dp)
     ) {
         Text(
             text = "Gerak Alam",
@@ -130,166 +148,115 @@ fun HeaderSection() {
 @Composable
 fun HomeScreen(
     events: List<VolunteerEvent>,
-    loadingEventId: Int?,
+    loadingId: Int?,
     onToggleFavorite: (Int) -> Unit,
-    onJoinEvent: (Int) -> Unit,
-    modifier: Modifier = Modifier
+    onJoin: (Int) -> Unit
 ) {
-    LazyColumn(
-        modifier = modifier.fillMaxSize(),
-        contentPadding = PaddingValues(bottom = 16.dp)
-    ) {
-        // Section Rekomendasi (LazyRow)
+    LazyColumn(modifier = Modifier.fillMaxSize()) {
         item {
             Text(
-                text = "Rekomendasi Kegiatan",
+                text = "Rekomendasi Populer",
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.padding(16.dp)
             )
             LazyRow(
                 contentPadding = PaddingValues(horizontal = 16.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                modifier = Modifier.padding(bottom = 24.dp)
             ) {
                 items(events.take(3)) { event ->
-                    EventRowItem(event = event, onToggleFavorite = { onToggleFavorite(event.id) })
+                    RecommendationCard(event)
                 }
             }
         }
 
-        // Section Daftar Utama (LazyColumn)
         item {
             Text(
-                text = "Daftar Kegiatan Utama",
+                text = "Daftar Menu Lengkap",
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(start = 16.dp, top = 24.dp, bottom = 12.dp)
+                modifier = Modifier.padding(start = 16.dp, top = 8.dp, end = 16.dp, bottom = 12.dp)
             )
         }
 
         items(events) { event ->
-            EventCard(
+            MainEventCard(
                 event = event,
-                isLoading = loadingEventId == event.id,
+                isLoading = loadingId == event.id,
                 onToggleFavorite = { onToggleFavorite(event.id) },
-                onJoin = { onJoinEvent(event.id) },
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                onJoin = { onJoin(event.id) }
             )
         }
     }
 }
 
 @Composable
-fun EventRowItem(
-    event: VolunteerEvent,
-    onToggleFavorite: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Card(
-        modifier = modifier.width(220.dp),
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(2.dp)
-    ) {
-        Column {
-            Box {
-                Image(
-                    painter = painterResource(id = event.imageRes),
-                    contentDescription = null,
-                    modifier = Modifier.fillMaxWidth().height(120.dp),
-                    contentScale = ContentScale.Crop
-                )
-                FavoriteButton(
-                    isFavorite = event.isFavorite,
-                    onToggle = onToggleFavorite,
-                    modifier = Modifier.align(Alignment.TopEnd).padding(4.dp)
-                )
-            }
-            Text(
-                text = event.namaKegiatan,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(8.dp),
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-        }
-    }
-}
-
-@Composable
-fun EventCard(
+fun MainEventCard(
     event: VolunteerEvent,
     isLoading: Boolean,
     onToggleFavorite: () -> Unit,
-    onJoin: () -> Unit,
-    modifier: Modifier = Modifier
+    onJoin: () -> Unit
 ) {
     Card(
-        modifier = modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(4.dp)
     ) {
         Column {
             Box {
-                Image(
-                    painter = painterResource(id = event.imageRes),
+                // MODUL 10: AsyncImage Coil
+                AsyncImage(
+                    model = event.imageUrl,
                     contentDescription = null,
-                    modifier = Modifier.fillMaxWidth().height(180.dp),
-                    contentScale = ContentScale.Crop
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(180.dp),
+                    contentScale = ContentScale.Crop,
+                    placeholder = painterResource(android.R.drawable.ic_menu_gallery),
+                    error = painterResource(android.R.drawable.ic_dialog_alert)
                 )
-                FavoriteButton(
-                    isFavorite = event.isFavorite,
-                    onToggle = onToggleFavorite,
-                    modifier = Modifier.align(Alignment.TopEnd).padding(8.dp)
-                )
+                IconButton(
+                    onClick = onToggleFavorite,
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(8.dp)
+                        .background(Color.White.copy(alpha = 0.7f), CircleShape)
+                        .size(32.dp)
+                ) {
+                    Icon(
+                        imageVector = if (event.isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                        contentDescription = null,
+                        tint = if (event.isFavorite) Color.Red else Color.Gray,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
             }
             Column(modifier = Modifier.padding(16.dp)) {
-                Text(
-                    text = event.namaKegiatan,
-                    style = MaterialTheme.typography.headlineSmall,
-                    fontWeight = FontWeight.Bold
-                )
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.LocationOn, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp))
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(text = event.lokasi, style = MaterialTheme.typography.bodySmall)
-                }
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = event.deskripsi,
-                    style = MaterialTheme.typography.bodyMedium,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis
-                )
-                Spacer(modifier = Modifier.height(16.dp))
+                Text(event.namaKegiatan, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                Text(event.deskripsi, style = MaterialTheme.typography.bodyMedium, color = Color.Gray, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                Text(text = "Biaya: ${event.harga}", color = Color(0xFFE65100), fontWeight = FontWeight.ExtraBold, modifier = Modifier.padding(vertical = 4.dp))
                 
+                Spacer(modifier = Modifier.height(12.dp))
 
                 Button(
                     onClick = onJoin,
-                    modifier = Modifier.fillMaxWidth(),
-
+                    modifier = Modifier.fillMaxWidth().height(48.dp),
                     enabled = !isLoading && !event.isJoined,
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = if (event.isJoined) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.primary
+                        containerColor = if (event.isJoined) Color(0xFF4CAF50) else Color(0xFFE65100)
                     ),
-                    shape = RoundedCornerShape(8.dp)
+                    shape = RoundedCornerShape(12.dp)
                 ) {
                     if (isLoading) {
-
-                        CircularProgressIndicator(
-                            color = Color.White,
-                            modifier = Modifier.size(20.dp),
-                            strokeWidth = 2.dp
-                        )
+                        CircularProgressIndicator(color = Color.White, modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text(text = "Sedang memproses...")
+                        Text("Memproses...")
                     } else {
-                        Text(
-                            text = if (event.isJoined) "Joined" else "Join",
-                            fontWeight = FontWeight.Bold
-                        )
+                        Text(text = if (event.isJoined) "Terdaftar" else "Pesan Sekarang", fontWeight = FontWeight.Bold)
                     }
                 }
             }
@@ -298,30 +265,37 @@ fun EventCard(
 }
 
 @Composable
-fun FavoriteButton(
-    isFavorite: Boolean,
-    onToggle: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    IconButton(
-        onClick = onToggle,
-        modifier = modifier
-            .background(Color.White.copy(alpha = 0.7f), shape = CircleShape)
-            .size(32.dp)
+fun RecommendationCard(event: VolunteerEvent) {
+    Card(
+        modifier = Modifier.width(160.dp),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(2.dp)
     ) {
-        Icon(
-            imageVector = if (isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
-            contentDescription = "Favorite",
-            tint = if (isFavorite) Color.Red else Color.Gray,
-            modifier = Modifier.size(20.dp)
-        )
+        Column {
+            AsyncImage(
+                model = event.imageUrl,
+                contentDescription = null,
+                modifier = Modifier.fillMaxWidth().height(100.dp),
+                contentScale = ContentScale.Crop,
+                placeholder = painterResource(android.R.drawable.ic_menu_gallery)
+            )
+            Column(modifier = Modifier.padding(8.dp)) {
+                Text(event.namaKegiatan, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(event.harga, style = MaterialTheme.typography.bodySmall, color = Color(0xFFE65100), fontWeight = FontWeight.SemiBold)
+            }
+        }
     }
 }
 
-@Preview(showBackground = true)
 @Composable
-fun PreviewHome() {
-    TAMTheme {
-        MainScreen()
+fun ErrorLayout(onRetry: () -> Unit) {
+    Column(
+        modifier = Modifier.fillMaxSize(),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text("Gagal Memuat Data", style = MaterialTheme.typography.headlineSmall, color = Color.Red, fontWeight = FontWeight.Bold)
+        Button(onClick = onRetry, modifier = Modifier.padding(top = 16.dp)) { Text("Coba Lagi") }
     }
 }
