@@ -52,7 +52,7 @@ dependencies {
     implementation(libs.androidx.compose.material.icons.extended)
 
     // Retrofit & Coil
-    implementation(libs.retrofit)
+    implementation(libs.retrofit.core)
     implementation(libs.retrofit.gson)
     implementation(libs.coil.compose)
 

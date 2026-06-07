@@ -22,8 +22,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.example.tam.api.RetrofitInstance
@@ -49,25 +51,19 @@ fun MainScreen() {
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
     
-    // State Management for Data, Loading, and Error
     var eventList by remember { mutableStateOf<List<VolunteerEvent>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
     var isError by remember { mutableStateOf(false) }
     
-    // State for Join button processing
     var loadingJoinId by remember { mutableStateOf<Int?>(null) }
 
-    // Logic to load data from API
     fun loadData() {
         scope.launch {
             try {
                 isLoading = true
                 isError = false
-                
-                // Fetch data from real API using Retrofit
                 val result = RetrofitInstance.api.getEvents()
                 eventList = result
-                
                 isLoading = false
             } catch (e: Exception) {
                 isLoading = false
@@ -95,7 +91,7 @@ fun MainScreen() {
                     ) {
                         CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
                         Spacer(modifier = Modifier.height(16.dp))
-                        Text("Mengambil data Gerak Alam...", color = Color.Gray)
+                        Text("Menghubungkan ke server Gerak Alam...", color = Color.Gray)
                     }
                 }
                 isError -> {
@@ -131,12 +127,12 @@ fun MainScreen() {
                                 val event = eventList.find { it.id == id }
                                 if (event != null && !event.isJoined) {
                                     loadingJoinId = id
-                                    delay(2000) // Simulated processing
+                                    delay(2000)
                                     eventList = eventList.map {
                                         if (it.id == id) it.copy(isJoined = true) else it
                                     }
                                     loadingJoinId = null
-                                    snackbarHostState.showSnackbar("Berhasil bergabung di aksi: ${event.namaKegiatan}")
+                                    snackbarHostState.showSnackbar("Berhasil bergabung di aksi: ${event.nama ?: ""}")
                                 }
                             }
                         }
@@ -184,7 +180,7 @@ fun HomeScreen(
                 horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 items(events.take(3)) { event ->
-                    RecommendationItem(
+                    RecommendationCard(
                         event = event,
                         onToggleFavorite = { onToggleFavorite(event.id) }
                     )
@@ -213,10 +209,7 @@ fun HomeScreen(
 }
 
 @Composable
-fun RecommendationItem(
-    event: VolunteerEvent,
-    onToggleFavorite: () -> Unit
-) {
+fun RecommendationCard(event: VolunteerEvent, onToggleFavorite: () -> Unit) {
     Card(
         modifier = Modifier.width(160.dp),
         shape = RoundedCornerShape(12.dp),
@@ -226,21 +219,16 @@ fun RecommendationItem(
         Column {
             Box {
                 AsyncImage(
-                    model = event.imageUrl,
+                    model = event.img,
                     contentDescription = null,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(100.dp)
-                        .background(Color.LightGray),
-                    contentScale = ContentScale.Crop
+                    modifier = Modifier.fillMaxWidth().height(100.dp),
+                    contentScale = ContentScale.Crop,
+                    placeholder = painterResource(android.R.drawable.ic_menu_gallery)
                 )
                 IconButton(
                     onClick = onToggleFavorite,
-                    modifier = Modifier
-                        .align(Alignment.TopEnd)
-                        .padding(4.dp)
-                        .background(Color.White.copy(alpha = 0.7f), CircleShape)
-                        .size(24.dp)
+                    modifier = Modifier.align(Alignment.TopEnd).padding(4.dp)
+                        .background(Color.White.copy(alpha = 0.7f), CircleShape).size(24.dp)
                 ) {
                     Icon(
                         imageVector = if (event.isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
@@ -252,14 +240,14 @@ fun RecommendationItem(
             }
             Column(modifier = Modifier.padding(8.dp)) {
                 Text(
-                    event.namaKegiatan,
+                    event.nama ?: "",
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.Bold,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
                 Text(
-                    event.harga,
+                    event.harga ?: "",
                     style = MaterialTheme.typography.bodySmall,
                     color = Color(0xFFE65100),
                     fontWeight = FontWeight.SemiBold
@@ -277,9 +265,7 @@ fun MainEventCard(
     onJoin: () -> Unit
 ) {
     Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp),
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(4.dp)
@@ -287,21 +273,17 @@ fun MainEventCard(
         Column {
             Box {
                 AsyncImage(
-                    model = event.imageUrl,
+                    model = event.img,
                     contentDescription = null,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(180.dp)
-                        .background(Color.LightGray),
-                    contentScale = ContentScale.Crop
+                    modifier = Modifier.fillMaxWidth().height(180.dp),
+                    contentScale = ContentScale.Crop,
+                    placeholder = painterResource(android.R.drawable.ic_menu_gallery),
+                    error = painterResource(android.R.drawable.ic_dialog_alert)
                 )
                 IconButton(
                     onClick = onToggleFavorite,
-                    modifier = Modifier
-                        .align(Alignment.TopEnd)
-                        .padding(8.dp)
-                        .background(Color.White.copy(alpha = 0.7f), CircleShape)
-                        .size(32.dp)
+                    modifier = Modifier.align(Alignment.TopEnd).padding(8.dp)
+                        .background(Color.White.copy(alpha = 0.7f), CircleShape).size(32.dp)
                 ) {
                     Icon(
                         imageVector = if (event.isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
@@ -312,38 +294,14 @@ fun MainEventCard(
                 }
             }
             Column(modifier = Modifier.padding(16.dp)) {
-                Text(
-                    event.namaKegiatan,
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold
-                )
+                Text(event.nama ?: "", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        imageVector = Icons.Default.LocationOn,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(16.dp)
-                    )
-                    Text(
-                        text = event.lokasi,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = Color.Gray,
-                        modifier = Modifier.padding(start = 4.dp)
-                    )
+                    Icon(Icons.Default.LocationOn, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp))
+                    Text(event.lokasi ?: "", style = MaterialTheme.typography.bodySmall, color = Color.Gray, modifier = Modifier.padding(start = 4.dp))
                 }
                 Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    event.deskripsi,
-                    style = MaterialTheme.typography.bodyMedium,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis
-                )
-                Text(
-                    text = "Biaya: ${event.harga}",
-                    color = Color(0xFFE65100),
-                    fontWeight = FontWeight.ExtraBold,
-                    modifier = Modifier.padding(vertical = 4.dp)
-                )
+                Text(event.deskripsi ?: "", style = MaterialTheme.typography.bodyMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                Text(text = "Biaya: ${event.harga ?: ""}", color = Color(0xFFE65100), fontWeight = FontWeight.ExtraBold, modifier = Modifier.padding(vertical = 4.dp))
                 
                 Spacer(modifier = Modifier.height(12.dp))
 
@@ -357,18 +315,11 @@ fun MainEventCard(
                     shape = RoundedCornerShape(12.dp)
                 ) {
                     if (isLoading) {
-                        CircularProgressIndicator(
-                            color = Color.White,
-                            modifier = Modifier.size(20.dp),
-                            strokeWidth = 2.dp
-                        )
+                        CircularProgressIndicator(color = Color.White, modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
                         Spacer(modifier = Modifier.width(8.dp))
                         Text("Memproses...")
                     } else {
-                        Text(
-                            text = if (event.isJoined) "Terdaftar" else "Daftar Sekarang",
-                            fontWeight = FontWeight.Bold
-                        )
+                        Text(text = if (event.isJoined) "Terdaftar" else "Daftar Sekarang", fontWeight = FontWeight.Bold)
                     }
                 }
             }

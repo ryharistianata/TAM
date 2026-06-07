@@ -1,13 +1,15 @@
 package com.example.tam.model
 
+import com.google.gson.annotations.SerializedName
+
 data class VolunteerEvent(
-    val id: Int,
-    val namaKegiatan: String,
-    val lokasi: String,
-    val tanggal: String,
-    val deskripsi: String,
-    val imageUrl: String,
-    val harga: String,
+    @SerializedName("id") val id: Int,
+    @SerializedName("nama") val nama: String?,
+    @SerializedName("lokasi") val lokasi: String?,
+    @SerializedName("waktu") val waktu: String?,
+    @SerializedName("deskripsi") val deskripsi: String?,
+    @SerializedName("img") val img: String?,
+    @SerializedName("harga") val harga: String?,
     val isFavorite: Boolean = false,
     val isJoined: Boolean = false
 )
