@@ -2,14 +2,6 @@ package com.example.tam.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-// Nuansa Alam (Hijau, Coklat, Natural)
-val ForestGreen = Color(0xFF2D5A27)
-val LeafGreen = Color(0xFF4CAF50)
-val EarthBrown = Color(0xFF795548)
-val SandBeige = Color(0xFFF5F5DC)
-val NaturalWhite = Color(0xFFFAFAFA)
-val DarkGrey = Color(0xFF333333)
-
 val Purple80 = Color(0xFFD0BCFF)
 val PurpleGrey80 = Color(0xFFCCC2DC)
 val Pink80 = Color(0xFFEFB8C8)
