@@ -8,5 +8,9 @@ data class VolunteerResponse(
     @SerializedName("description") val description: String,
     @SerializedName("location") val location: String,
     @SerializedName("date") val date: String,
-    @SerializedName("imageUrl") val imageUrl: String
-)
+    // Mendukung berbagai key image dari JSON agar tidak rusak
+    @SerializedName("image") val image: String?,
+    @SerializedName("imageUrl") val imageUrl: String?
+) {
+    val displayImage: String get() = image ?: imageUrl ?: ""
+}

@@ -5,6 +5,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.rememberNavController
 import com.example.tam.data.remote.retrofit.RetrofitClient
@@ -15,27 +16,32 @@ import com.example.tam.ui.screen.login.LoginViewModel
 import com.example.tam.ui.screen.favorite.FavoriteViewModel
 import com.example.tam.ui.screen.profile.ProfileViewModel
 import com.example.tam.ui.theme.TAMTheme
+import com.example.tam.ui.theme.ThemeViewModel
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            TAMTheme {
-                AppMain()
+            val themeViewModel: ThemeViewModel = viewModel()
+            val isDarkMode by themeViewModel.isDarkMode
+            
+            TAMTheme(darkTheme = isDarkMode) {
+                AppMain(themeViewModel)
             }
         }
     }
 }
 
 @Composable
-fun AppMain() {
+fun AppMain(themeViewModel: ThemeViewModel) {
     val navController = rememberNavController()
 
+    // Dependency Injection setup (Simplified)
     val api = RetrofitClient.instance
     val repository = VolunteerRepository(api)
     
-
+    // ViewModels initialization
     val homeViewModel: HomeViewModel = viewModel(
         factory = object : androidx.lifecycle.ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")
@@ -54,6 +60,7 @@ fun AppMain() {
         homeViewModel = homeViewModel,
         loginViewModel = loginViewModel,
         favoriteViewModel = favoriteViewModel,
-        profileViewModel = profileViewModel
+        profileViewModel = profileViewModel,
+        themeViewModel = themeViewModel
     )
 }

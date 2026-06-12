@@ -6,7 +6,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.FavoriteBorder
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -18,13 +18,15 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.example.tam.data.model.response.VolunteerResponse
+import com.example.tam.ui.theme.KitabisaCyan
 
 @Composable
 fun DetailContent(
     activity: VolunteerResponse,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onAddToFavorite: () -> Unit
 ) {
-    Box(modifier = modifier.fillMaxSize().background(Color(0xFFF5F7FA))) {
+    Box(modifier = modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -35,10 +37,11 @@ fun DetailContent(
             Surface(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(250.dp)
+                    .height(300.dp)
                     .padding(16.dp),
-                shape = RoundedCornerShape(16.dp),
-                color = Color(0xFFE8F0FE)
+                shape = RoundedCornerShape(24.dp),
+                shadowElevation = 8.dp,
+                color = MaterialTheme.colorScheme.surface
             ) {
                 AsyncImage(
                     model = activity.imageUrl,
@@ -47,25 +50,25 @@ fun DetailContent(
                 )
             }
 
-            Column(modifier = Modifier.padding(horizontal = 16.dp)) {
+            Column(modifier = Modifier.padding(horizontal = 24.dp)) {
                 Text(
                     text = activity.title,
-                    fontSize = 24.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.Black
+                    style = MaterialTheme.typography.headlineMedium,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = MaterialTheme.colorScheme.onBackground
                 )
                 
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(12.dp))
                 
                 Surface(
-                    color = Color(0xFFE8F0FE),
-                    shape = RoundedCornerShape(4.dp)
+                    color = KitabisaCyan.copy(alpha = 0.15f),
+                    shape = RoundedCornerShape(8.dp)
                 ) {
                     Text(
-                        text = "Volunteer",
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                        text = "Volunteer Active",
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
                         fontSize = 12.sp,
-                        color = Color(0xFF1967D2),
+                        color = KitabisaCyan,
                         fontWeight = FontWeight.Bold
                     )
                 }
@@ -74,28 +77,53 @@ fun DetailContent(
 
                 DetailSection(title = "Lokasi", content = activity.location)
                 DetailSection(title = "Tanggal", content = activity.date)
-                DetailSection(title = "Deskripsi Kegiatan", content = activity.description)
                 
-                // Extra sections like in the reference image
+                Divider(modifier = Modifier.padding(vertical = 16.dp), color = MaterialTheme.colorScheme.outlineVariant)
+                
+                Text(
+                    text = "Tentang Kegiatan",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onBackground
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = activity.description,
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
+                    lineHeight = 24.sp
+                )
+                
+                Spacer(modifier = Modifier.height(16.dp))
+                
                 DetailSection(title = "Persyaratan", content = "Membawa semangat positif dan perlengkapan kebersihan pribadi.")
+                
+                Spacer(modifier = Modifier.height(32.dp))
             }
         }
 
-        // Bottom Button "Tambah ke Favorit"
-        Button(
-            onClick = { /* Tambah ke Favorit */ },
+        // Single Bottom Button "Tambah ke Favorit" - Styled with kitabisacyan
+        Surface(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
-                .fillMaxWidth()
-                .padding(16.dp)
-                .height(50.dp),
-            shape = RoundedCornerShape(12.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1967D2))
+                .fillMaxWidth(),
+            color = MaterialTheme.colorScheme.surface,
+            shadowElevation = 16.dp
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Default.FavoriteBorder, contentDescription = null)
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("Tambah ke Favorit", fontWeight = FontWeight.Bold)
+            Button(
+                onClick = onAddToFavorite,
+                modifier = Modifier
+                    .padding(16.dp)
+                    .fillMaxWidth()
+                    .height(56.dp),
+                shape = RoundedCornerShape(16.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = KitabisaCyan)
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.Favorite, contentDescription = null, tint = Color.White)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Tambah ke Favorit", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                }
             }
         }
     }
@@ -105,16 +133,17 @@ fun DetailContent(
 fun DetailSection(title: String, content: String) {
     Column(modifier = Modifier.padding(vertical = 8.dp)) {
         Text(
-            text = title + ":",
+            text = title,
+            style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold,
-            fontSize = 16.sp,
-            color = Color.Black
+            color = MaterialTheme.colorScheme.onBackground
         )
+        Spacer(modifier = Modifier.height(4.dp))
         Text(
             text = content,
-            fontSize = 14.sp,
-            color = Color.DarkGray,
-            lineHeight = 20.sp
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
+            lineHeight = 22.sp
         )
     }
 }

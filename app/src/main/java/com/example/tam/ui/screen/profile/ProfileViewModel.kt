@@ -8,8 +8,15 @@ class ProfileViewModel : ViewModel() {
     private val _uiState = mutableStateOf(ProfileUIState())
     val uiState: State<ProfileUIState> = _uiState
 
+    fun updateProfile(name: String, email: String, phone: String) {
+        _uiState.value = _uiState.value.copy(
+            name = name,
+            email = email,
+            phone = phone
+        )
+    }
+
     fun logout(onLogoutSuccess: () -> Unit) {
-        // Logic logout (misal clear SessionManager)
         onLogoutSuccess()
     }
 }

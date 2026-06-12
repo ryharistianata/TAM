@@ -1,14 +1,28 @@
 <resources>
     <string name="app_name">Gerak Alam</string>
     <string name="email">Email</string>
-    <string name="password">Password</string>
-    <string name="login">Login</string>
-    <string name="logout">Logout</string>
-    <string name="home">Home</string>
-    <string name="favorite">Favorite</string>
-    <string name="profile">Profile</string>
-    <string name="error_loading">Error loading data</string>
-    <string name="no_internet">No Internet Connection</string>
+    <string name="password">Kata Sandi</string>
+    <string name="login">Masuk</string>
+    <string name="logout">Keluar</string>
+    <string name="home">Beranda</string>
+    <string name="favorite">Favorit</string>
+    <string name="profile">Profil</string>
+    <string name="discovery">Eksplorasi</string>
+    <string name="leaderboard">Peringkat</string>
+    <string name="history">Riwayat</string>
+    <string name="settings">Pengaturan</string>
+    <string name="notification">Notifikasi</string>
+
+    <string name="welcome_back">Selamat Datang,</string>
+    <string name="relawan_alam">Relawan Alam 👋</string>
+    <string name="search_placeholder">Cari aksi nyata relawan&#8230;</string>
+    <string name="search_not_found">Hasil tidak ditemukan</string>
+    <string name="error_loading">Gagal memuat data</string>
+    <string name="no_internet">Koneksi Internet Terputus</string>
     <string name="empty_data">Data tidak tersedia</string>
-    <string name="fav_empty">Kegiatan Favorit Sementera Kosong</string>
+    <string name="fav_empty">Kegiatan Favorit Sementara Kosong</string>
+    <string name="added_to_fav">Berhasil ditambahkan ke favorit!</string>
+    <string name="login_title">Masuk ke Akun</string>
+    <string name="login_subtitle">Bersama wujudkan aksi nyata</string>
+    <string name="register_prompt">Belum punya akun? Daftar sekarang</string>
 </resources>
